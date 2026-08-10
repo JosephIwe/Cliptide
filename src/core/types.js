@@ -219,6 +219,9 @@ export function createClipItem(snapshot, options) {
     const { sensitive, labels, matches } = classify(text);
     const truncated = bytes > inlineLimitBytes;
     const head = truncated ? text.slice(0, TEXT_HEAD_CHARS) : text;
+    // Hashed once: the blob is addressed by the same content fingerprint, and
+    // digesting a multi-megabyte payload twice is pure waste.
+    const hash = hashText(text, format);
 
     // Mask against the head we actually keep, re-classifying so that spans
     // computed on the full text cannot point past the end of the head.
@@ -228,10 +231,10 @@ export function createClipItem(snapshot, options) {
     return {
       item: {
         ...base,
-        hash: hashText(text, format),
+        hash,
         text: head,
         files: null,
-        blobRef: truncated ? hashText(text, format) : null,
+        blobRef: truncated ? hash : null,
         truncated,
         bytes,
         preview: buildPreview(display, previewLength),
