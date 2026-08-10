@@ -149,6 +149,22 @@ network. A future LLM-backed resolver implements the same interface, and the
 clipboard engine is unaware either way. The engine never calls a provider, and no
 clipboard content is transmitted anywhere by any code path in this repository.
 
+## Enforced, not just documented
+
+The architectural claims above are checked by `tests/privacy.boundaries.test.js`,
+which reads the source rather than trusting the prose:
+
+- no module imports a network transport (`node:http`, `net`, `tls`, …)
+- no module calls `fetch`, `XMLHttpRequest`, `WebSocket`, or `sendBeacon`
+- `core/` imports nothing outside the standard library
+- the dependency direction never points back up
+- the agent layer names no AI provider
+- the package declares zero dependencies
+- no `console` call is handed a clipboard payload
+
+A layering violation or a new network client fails the suite, which forces the
+change to be deliberate and visible instead of quiet.
+
 ## Milestone status
 
 | Milestone | Scope | State |
@@ -163,3 +179,20 @@ clipboard content is transmitted anywhere by any code path in this repository.
 
 M6 is the remaining MVP surface. Everything below it is engine work that runs and
 is tested headlessly; M6 is the part that needs a real desktop session to verify.
+
+### What M6 must supply
+
+The interfaces it plugs into already exist, so M6 adds implementations rather
+than architecture:
+
+1. **Native clipboard sources** implementing `ClipboardSource` — `changeCount`
+   on macOS and `GetClipboardSequenceNumber` on Windows for a genuinely cheap
+   change token, image payloads, and the concealed-type checks the CLI sources
+   cannot perform. This is the one outstanding gap in the privacy model.
+2. **A global shortcut** bound to `settings.ui.summonShortcut`, already
+   validated as an accelerator.
+3. **An overlay window** consuming `HistoryService.search()` — results carry
+   `highlights` indexed into `preview`, ready to render.
+4. **Synthetic paste** after `history.use(id)` places the payload.
+
+None of these require a change below `src/history/`.

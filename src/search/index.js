@@ -128,6 +128,8 @@ function highlightRanges(preview, terms) {
  * @param {boolean} [options.pinnedOnly]
  * @param {boolean} [options.includeSensitive] default true
  * @param {boolean} [options.pinnedFirst] force pins above all results
+ * @param {number|null} [options.since] only items used at or after this time
+ * @param {number|null} [options.until] only items used at or before this time
  * @returns {SearchResult[]}
  */
 export function searchHistory(items, query, options = {}) {
@@ -138,6 +140,8 @@ export function searchHistory(items, query, options = {}) {
     pinnedOnly = false,
     includeSensitive = true,
     pinnedFirst = false,
+    since = null,
+    until = null,
   } = options;
 
   const terms = parseQuery(query);
@@ -146,6 +150,9 @@ export function searchHistory(items, query, options = {}) {
   if (pinnedOnly) candidates = candidates.filter((item) => item.pinned);
   if (kinds) candidates = candidates.filter((item) => kinds.includes(item.kind));
   if (!includeSensitive) candidates = candidates.filter((item) => !item.sensitive);
+  // Time windows filter on last use, matching how recency is scored.
+  if (since !== null) candidates = candidates.filter((item) => item.updatedAt >= since);
+  if (until !== null) candidates = candidates.filter((item) => item.updatedAt <= until);
 
   const results = [];
 
