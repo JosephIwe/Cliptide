@@ -69,10 +69,14 @@ export function createManualClock(start = 1_700_000_000_000) {
         if (nextHandleDue === null) break;
         const timer = timers.get(nextHandleDue);
         timers.delete(nextHandleDue);
-        current = timer.due;
+        // An overdue timer — one whose due time `jump()` already passed — fires
+        // at the present, not in the past. Time must never run backwards here,
+        // or code that measures the gap between ticks (the monitor's sleep
+        // detection) would see a nonsensical interval.
+        current = Math.max(current, timer.due);
         await timer.fn();
       }
-      current = target;
+      current = Math.max(current, target);
     },
 
     /** Jump forward without firing timers — simulates the machine sleeping. */
