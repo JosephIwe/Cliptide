@@ -232,6 +232,22 @@ export class ClipboardMonitor extends EventEmitter {
   }
 
   /**
+   * Adopt the clipboard's current state as the baseline without recording it.
+   *
+   * Called after Cliptide itself writes to the clipboard, so the agent does not
+   * treat its own paste as a fresh copy event. Failing to read the token here
+   * is not an error worth surfacing — the next tick recovers on its own.
+   */
+  async syncToken() {
+    try {
+      this.#lastToken = await this.source.changeToken();
+      return this.#lastToken;
+    } catch {
+      return this.#lastToken;
+    }
+  }
+
+  /**
    * Read and record the clipboard right now, ignoring the change token.
    *
    * Used when the app cannot trust its token — after a source is replaced, or

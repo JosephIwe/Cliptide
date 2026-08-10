@@ -243,6 +243,25 @@ export class ClipStore {
     return view.slice(offset, limit === Infinity ? undefined : offset + limit);
   }
 
+  /**
+   * Promote an existing item as though it had just been copied.
+   *
+   * This is the retrieval path: selecting something from history and putting it
+   * back on the clipboard is a use of that content, so it moves to the top and
+   * counts toward frequency — the same as if the user had copied it again.
+   */
+  async touch(id) {
+    return this.#serialize(async () => {
+      const item = this.items.get(id);
+      if (!item) return null;
+      const promoted = promoteClipItem(item, this.clock.now());
+      await this.#append({ op: OPS.PUT, item: promoted });
+      this.#remember(promoted);
+      await this.#maybeCompact();
+      return promoted;
+    });
+  }
+
   async pin(id, pinned = true) {
     return this.#serialize(async () => {
       const item = this.items.get(id);
