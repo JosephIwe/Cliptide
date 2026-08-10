@@ -1,0 +1,19 @@
+{
+  "name": "@cliptide/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cliptide clipboard engine: capture, storage, retention, search, and the agent boundary. No UI, no network, no dependencies.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\"",
+    "demo": "node scripts/demo-core.mjs"
+  },
+  "license": "UNLICENSED"
+}

@@ -21,8 +21,8 @@ library and a demo, not something to install. Everything below describes what
 actually runs today.
 
 ```
-node scripts/demo-core.mjs   # the full loop, headless, in a temp directory
-npm test                     # 266 tests
+npm run demo   # the full loop, headless, in a temp directory
+npm test       # runs every workspace suite
 ```
 
 ## What it does today
@@ -47,7 +47,7 @@ Full detail in [docs/SECURITY.md](docs/SECURITY.md). The short version:
 
 - **Clipboard content never leaves the machine.** There is no network client
   anywhere in the engine. This is enforced by a test that reads the source and
-  fails if anyone adds one — see `tests/privacy.boundaries.test.js`.
+  fails if anyone adds one — see `packages/engine/tests/privacy.boundaries.test.js`.
 - **Password managers are never recorded.** Content marked concealed or
   transient by the OS is dropped before it is hashed, previewed, or written.
 - **Credential-shaped content is masked in previews** and expires on a shorter
@@ -65,13 +65,13 @@ Full detail in [docs/SECURITY.md](docs/SECURITY.md). The short version:
 Full detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```
-src/core/      domain model — pure, no I/O, standard library only
-src/storage/   append-only log, content-addressed blobs, retention
-src/capture/   clipboard source contract, poll loop, per-OS adapters
-src/search/    ranked query, pure
-src/history/   HistoryService — the only surface the UI and agent touch
-src/agent/     provider-agnostic natural-language boundary
-src/settings/  validated, versioned user settings
+packages/engine/src/core/      domain model — pure, no I/O, standard library only
+packages/engine/src/storage/   append-only log, content-addressed blobs, retention
+packages/engine/src/capture/   clipboard source contract, poll loop, per-OS adapters
+packages/engine/src/search/    ranked query, pure
+packages/engine/src/history/   HistoryService — the only surface the UI and agent touch
+packages/engine/src/agent/     provider-agnostic natural-language boundary
+packages/engine/src/settings/  validated, versioned user settings
 ```
 
 Dependencies point one way only, and a test enforces that too. The UI depends on
@@ -91,7 +91,7 @@ database, it swaps without touching callers.
 ## Using the engine
 
 ```js
-import { createCliptide } from './src/index.js';
+import { createCliptide } from '@cliptide/engine';
 
 const app = await createCliptide();
 await app.start();

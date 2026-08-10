@@ -9,7 +9,7 @@ be checked against the code.
 
 **Clipboard content never leaves the machine.**
 
-This is enforced structurally, not by policy: no module under `src/` imports a
+This is enforced structurally, not by policy: no module under `packages/engine/src/` imports a
 network client, and `core/` imports nothing outside the Node standard library.
 There is no telemetry, no crash reporting with payloads, no analytics, and no
 sync. Adding any of those requires new code at a boundary that does not exist
@@ -29,15 +29,15 @@ Cliptide honors those markers before any other rule:
 
 A snapshot carrying any of these is dropped at the capture boundary. It is not
 hashed, not previewed, not written, and not counted. See
-`isConcealed()` in `src/core/types.js` and the drop path in
-`src/capture/monitor.js`.
+`isConcealed()` in `packages/engine/src/core/types.js` and the drop path in
+`packages/engine/src/capture/monitor.js`.
 
 ## Credential-shaped content is flagged and masked
 
 Beyond OS markers, Cliptide classifies content that *looks* like a credential:
 private key blocks, cloud provider keys, service tokens (GitHub, Slack, Stripe,
 Google, OpenAI/Anthropic), JWTs, `password=`/`secret=` assignments, and
-Luhn-valid card numbers. See `src/core/redact.js`.
+Luhn-valid card numbers. See `packages/engine/src/core/redact.js`.
 
 Classification drives three behaviors:
 

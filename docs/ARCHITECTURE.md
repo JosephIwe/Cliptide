@@ -28,34 +28,35 @@ anything about an AI provider.
 ## Module boundaries
 
 ```
-src/core/       Domain model. Pure, dependency-free, no I/O.
-                types.js   ClipItem shape, content kinds, validation, previews
-                ids.js     sortable monotonic ids
-                hash.js    content fingerprinting (dedupe key)
-                redact.js  sensitive-content classification + masking
-                clock.js   injectable time source (tests never sleep)
-                errors.js  structured error kinds
+packages/engine/src/
+  core/       Domain model. Pure, dependency-free, no I/O.
+    types.js      ClipItem shape, content kinds, validation, previews
+    ids.js        sortable monotonic ids
+    hash.js       content fingerprinting (dedupe key)
+    redact.js     sensitive-content classification + masking
+    clock.js      injectable time source (tests never sleep)
+    errors.js     structured error kinds
 
-src/storage/    Durability. Knows the disk, not the domain rules.
-                paths.js       per-platform data directory resolution
-                log.js         append-only JSONL with atomic durable writes
-                blobs.js       content-addressed spill for large payloads
-                store.js       ClipStore: the persistence contract
-                retention.js   retention policy evaluation (pure)
+  storage/    Durability. Knows the disk, not the domain rules.
+    paths.js      per-platform data directory resolution
+    log.js        append-only JSONL with atomic durable writes
+    blobs.js      content-addressed spill for large payloads
+    store.js      ClipStore: the persistence contract
+    retention.js  retention policy evaluation (pure)
 
-src/capture/    The clipboard watcher.
-                source.js      ClipboardSource interface + in-memory fake
-                monitor.js     poll loop, dedupe, debounce, pause/resume
-                platform/      per-OS ClipboardSource implementations
+  capture/    The clipboard watcher.
+    source.js     ClipboardSource interface + in-memory fake
+    monitor.js    poll loop, dedupe, debounce, pause/resume
+    platform/     per-OS ClipboardSource implementations
 
-src/search/     Ranked query over history. Pure, no I/O.
+  search/     Ranked query over history. Pure, no I/O.
+  history/    HistoryService: the single facade the UI and agent consume.
+  agent/      Natural-language boundary. Provider-agnostic by construction:
+              a resolver interface plus a deterministic local implementation.
+  settings/   Validated, versioned user settings with safe defaults.
 
-src/history/    HistoryService: the single facade the UI and agent consume.
-
-src/agent/      Natural-language boundary. Provider-agnostic by construction:
-                a resolver interface plus a deterministic local implementation.
-
-src/settings/   Validated, versioned user settings with safe defaults.
+packages/engine/tests/          the suite for all of the above
+packages/desktop/               Electron shell (not created yet)
 ```
 
 ### Dependency direction
@@ -75,7 +76,7 @@ replaced (Electron, native, CLI) without touching anything below it.
 ## The clipboard item
 
 A `ClipItem` is the durable unit of history. Full shape and validation rules live
-in `src/core/types.js`; the fields that matter architecturally:
+in `packages/engine/src/core/types.js`; the fields that matter architecturally:
 
 | Field | Why it exists |
 | --- | --- |
@@ -144,14 +145,14 @@ The agent surface is a contract, not an implementation:
 resolve(request, context) -> AgentPlan   // { intent, filters, limit, explanation }
 ```
 
-`src/agent/local.js` implements it deterministically with no AI provider and no
+`packages/engine/src/agent/local.js` implements it deterministically with no AI provider and no
 network. A future LLM-backed resolver implements the same interface, and the
 clipboard engine is unaware either way. The engine never calls a provider, and no
 clipboard content is transmitted anywhere by any code path in this repository.
 
 ## Enforced, not just documented
 
-The architectural claims above are checked by `tests/privacy.boundaries.test.js`,
+The architectural claims above are checked by `packages/engine/tests/privacy.boundaries.test.js`,
 which reads the source rather than trusting the prose:
 
 - no module imports a network transport (`node:http`, `net`, `tls`, …)
@@ -195,4 +196,4 @@ than architecture:
    `highlights` indexed into `preview`, ready to render.
 4. **Synthetic paste** after `history.use(id)` places the payload.
 
-None of these require a change below `src/history/`.
+None of these require a change below `packages/engine/src/history/`.

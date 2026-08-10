@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+out/
+build/
+coverage/
+
+# Local clipboard data.
+# If a developer points CLIPTIDE_DATA_DIR at the working tree, history lands
+# here. Clipboard history is user data and must never reach the repository.
+.cliptide-data/
+history.jsonl
+history.jsonl.tmp
+blobs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

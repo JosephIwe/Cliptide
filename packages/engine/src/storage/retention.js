@@ -24,9 +24,14 @@ export const RETENTION_REASONS = Object.freeze({
  * is long enough to be worth searching, and flagged credentials fall out after
  * fifteen minutes because a token you copied an hour ago has no business
  * sitting in a searchable list.
+ *
+ * `maxTotalBytes` is the primary storage bound — it is what actually protects
+ * the disk, because a thousand small snippets cost less than one screenshot.
+ * `maxItems` is a secondary guard against an unbounded index, set high enough
+ * that users do not silently lose things they expected to still find.
  */
 export const DEFAULT_RETENTION = Object.freeze({
-  maxItems: 500,
+  maxItems: 2000,
   maxAgeMinutes: 60 * 24 * 14,
   secretRetentionMinutes: 15,
   maxTotalBytes: 256 * 1024 * 1024,
