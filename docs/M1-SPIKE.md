@@ -196,7 +196,7 @@ first. Use a **throwaway password** for the concealed test — never a real one.
 
 ### Setup (both platforms)
 
-Node 20+ and network access for the Electron binary download.
+Node 22+ and network access for the Electron binary download.
 
 ```bash
 git clone https://github.com/JosephIwe/Cliptide.git

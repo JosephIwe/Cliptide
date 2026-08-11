@@ -5,7 +5,7 @@
   "description": "Privacy-first, local-first cross-platform clipboard agent. Copy, remember, summon, select, paste.",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "workspaces": [
     "packages/*"
