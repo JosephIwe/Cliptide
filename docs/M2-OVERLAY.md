@@ -171,29 +171,197 @@ full-screen app.
    the view-model boundary exists to prevent. A bounded thumbnail path can be
    designed later.
 
-## 8. Remaining manual verification
+## 8. Manual verification package
 
-On a real Mac and a real Windows machine:
+**For a tester with a real Mac or Windows machine. No knowledge of the codebase
+is required — follow the steps in order and record PASS/FAIL.**
+
+Verified against commit **`3296c8c`**, Electron **43.3.0**.
+
+### Before you start
+
+Install **Node 22 or newer** (`node --version` must print v22 or higher), then:
 
 ```bash
+git clone https://github.com/JosephIwe/Cliptide.git
+cd Cliptide
 npm install
-npx electron packages/desktop/src/main.js
+git rev-parse --short HEAD          # record this SHA in your report
 ```
 
-Then confirm:
+Leave the terminal open. Cliptide prints its log there, and **step 21 checks
+that log**, so do not close it until you are finished.
 
-1. No window appears at launch; a tray icon does.
-2. `Cmd/Ctrl+Shift+V` summons the overlay **over another focused application**.
-3. ↑/↓ move the highlight; the first row is selected on open.
-4. Typing filters; clearing the box restores recent history.
-5. **Enter** puts the item on the clipboard, the overlay closes, focus returns
-   to the previous app, and `Cmd/Ctrl+V` pastes it.
-6. **Escape** dismisses and the clipboard is unchanged.
-7. Copy from a password manager — it must **not** appear in the overlay.
-8. Tray → Quit shuts down cleanly with no leftover process.
-9. Pressing the shortcut again while open dismisses.
-10. On macOS: note whether a paste-permission prompt appears, and whether once
-    or repeatedly.
+### Safety rules — read before step 17
 
-Item 7 is the same manual password-manager test M1 left open; the overlay is now
-the surface where a failure would be visible.
+- Use a **throwaway** credential you create for this test. **Never a real
+  production password.**
+- **Never paste the password, or any clipboard content, into your report.**
+  Record only PASS/FAIL, booleans, and format names.
+- Cliptide will overwrite your clipboard during these tests. Save anything you
+  need first.
+- Delete the throwaway credential from your password manager afterwards.
+
+---
+
+## A. macOS procedure
+
+Start Cliptide (leave this running, and leave the terminal visible):
+
+```bash
+npm start --workspace @cliptide/desktop
+```
+
+| # | Step | Expected result | PASS/FAIL |
+| --- | --- | --- | --- |
+| 1 | Run the command above | App launches without error | |
+| 2 | Look at the Dock and the menu bar | **No** Dock icon and **no** app window. A Cliptide icon **is** in the menu bar (top right) | |
+| 3 | Open TextEdit (or any app), type something, and click into it | That app has focus | |
+| 4 | Copy three different short texts (⌘C) from TextEdit, a few seconds apart | — | |
+| 5 | With TextEdit still focused, press **⌘⇧V** | Overlay appears | |
+| 6 | Look at where the overlay appeared | It is **on top of** TextEdit, not behind it | |
+| 7 | Type a letter | The letter lands in the overlay's search box, not TextEdit — the overlay has keyboard focus | |
+| 8 | Clear the search box | Your three copied items are listed, newest first. The first row is visibly highlighted | |
+| 9 | Press **↓** twice, then **↑** once | The highlight moves down, down, then up. It does not wrap around the ends | |
+| 10 | Press **Enter** on a row you recognise | Overlay closes | |
+| 11 | Note which app is now focused | Focus returned to TextEdit | |
+| 12 | Press **⌘V** in TextEdit | The item you selected is pasted | |
+| 13 | Press **⌘⇧V**, then press **Escape** | Overlay closes | |
+| 14 | Press **⌘V** in TextEdit again | The **same** item as step 12 pastes — Escape changed nothing | |
+| 15 | Press **⌘⇧V** and type a word that appears in only one item | Results filter as you type, with no delay | |
+| 16 | Delete what you typed | Full recent history returns | |
+| 17 | Press **Escape**. In your password manager, create a **throwaway** entry and copy its password | — | |
+| 18 | Press **⌘⇧V** | Overlay appears | |
+| 19 | Look at the list | The password is **not** listed. **Do not record the value.** | |
+| 20 | Type part of the password, then try **↓** and **Enter** | Nothing matches; the password cannot be selected or pasted | |
+| 21 | Look at the terminal running Cliptide | Lines like `[cliptide] captured kind=text bytes=42 sensitive=false`. **No clipboard content anywhere** | |
+| 22 | Menu bar icon → **Quit Cliptide** | App exits; no Cliptide process remains (`pgrep -fl cliptide`) | |
+
+**macOS notes to record:** if any permission prompt appears (especially a paste
+or Accessibility prompt on macOS 14+), note **what it asked for** and whether it
+appeared **once or repeatedly**. This is important — a prompt on every poll would
+change the architecture.
+
+---
+
+## B. Windows procedure
+
+Start Cliptide (leave this running, and leave the terminal visible):
+
+```powershell
+npm start --workspace @cliptide/desktop
+```
+
+| # | Step | Expected result | PASS/FAIL |
+| --- | --- | --- | --- |
+| 1 | Run the command above | App launches without error | |
+| 2 | Look at the taskbar and the system tray | **No** taskbar button and **no** app window. A Cliptide icon **is** in the system tray (bottom right; check the hidden-icons arrow) | |
+| 3 | Open Notepad, type something, click into it | Notepad has focus | |
+| 4 | Copy three different short texts (Ctrl+C) from Notepad, a few seconds apart | — | |
+| 5 | With Notepad still focused, press **Ctrl+Shift+V** | Overlay appears | |
+| 6 | Look at where the overlay appeared | It is **on top of** Notepad, not behind it | |
+| 7 | Type a letter | The letter lands in the overlay's search box, not Notepad | |
+| 8 | Clear the search box | Your three copied items are listed, newest first. First row visibly highlighted | |
+| 9 | Press **↓** twice, then **↑** once | Highlight moves down, down, up. Does not wrap | |
+| 10 | Press **Enter** on a row you recognise | Overlay closes | |
+| 11 | Note which app is now focused | Focus returned to Notepad | |
+| 12 | Press **Ctrl+V** in Notepad | The item you selected is pasted | |
+| 13 | Press **Ctrl+Shift+V**, then **Escape** | Overlay closes | |
+| 14 | Press **Ctrl+V** in Notepad again | The **same** item as step 12 pastes — Escape changed nothing | |
+| 15 | Press **Ctrl+Shift+V** and type a word in only one item | Results filter as you type | |
+| 16 | Delete what you typed | Full recent history returns | |
+| 17 | Press **Escape**. In your password manager, create a **throwaway** entry and copy its password | — | |
+| 18 | Press **Ctrl+Shift+V** | Overlay appears | |
+| 19 | Look at the list | The password is **not** listed. **Do not record the value.** | |
+| 20 | Type part of the password, then try **↓** and **Enter** | Nothing matches; cannot be selected or pasted | |
+| 21 | Look at the terminal running Cliptide | Lines like `[cliptide] captured kind=text bytes=42 sensitive=false`. **No clipboard content anywhere** | |
+| 22 | Tray icon → right-click → **Quit Cliptide** | App exits; no Cliptide process remains (Task Manager) | |
+
+**Windows notes to record:** if endpoint protection or SmartScreen blocks the
+run, record the product name and the rule.
+
+---
+
+### Pinned-item check (both platforms)
+
+Pinning has no UI in M2, so verify it does not regress rather than exercising it:
+
+Steps 8 and 16 must list your recent items in a stable order, and re-copying an
+item already in history must move it to the top **without creating a duplicate
+row**. Copy an earlier item again, summon, and confirm one row, at the top.
+
+### If the shortcut does nothing
+
+Another application already owns the combination. Cliptide falls back
+automatically — check the terminal for a line beginning
+`[cliptide] summon shortcut`, which names the accelerator that actually bound,
+or `[cliptide] WARNING:` if none did. Use the tray icon to open the overlay and
+record which accelerator was used.
+
+---
+
+## 9. Reporting template
+
+Copy this, fill it in, and send it back. **It must contain no clipboard
+contents.**
+
+```
+Cliptide M2 manual verification
+
+Platform:            macOS __ / Windows __
+OS version:          
+Cliptide commit SHA: 
+Electron version:    43.3.0
+Node version:        
+Shortcut used:       (from the [cliptide] summon shortcut log line)
+Password manager:    (name + version, step 17)
+
+A. M2 FUNCTIONAL VERIFICATION
+  1  install / launch                        PASS / FAIL
+  2  runs as background + tray app           PASS / FAIL
+  5  global shortcut summons overlay         PASS / FAIL
+  7  overlay receives keyboard focus         PASS / FAIL
+  8  recent clipboard items appear           PASS / FAIL
+  9  Arrow Up / Down navigation              PASS / FAIL
+ 10  Enter selects                           PASS / FAIL
+ 12  Enter restored the item (paste works)   PASS / FAIL
+ 11  overlay closes on Enter                 PASS / FAIL
+ 11  focus returned to previous app          PASS / FAIL
+ 13  Escape closes overlay                   PASS / FAIL
+ 14  Escape left clipboard unchanged         PASS / FAIL
+ 15  search filters                          PASS / FAIL
+ 16  clearing search restores history        PASS / FAIL
+  -  re-copy promotes without duplicating    PASS / FAIL
+ 22  clean shutdown, no leftover process     PASS / FAIL
+
+B. M2 VISUAL / UX VERIFICATION
+  6  overlay appears above the other app     PASS / FAIL
+  -  overlay is legible and correctly sized  PASS / FAIL
+  -  selected row is obvious                 PASS / FAIL
+  -  felt instant (no perceptible lag)       PASS / FAIL
+  -  visible UI problems:                    (describe, or NONE)
+
+C. PASSWORD-MANAGER PRIVACY VERIFICATION
+ 19  password absent from the overlay        PASS / FAIL
+ 20  password not searchable                 PASS / FAIL
+ 20  password not selectable / pasteable     PASS / FAIL
+ 21  no clipboard content in logs            PASS / FAIL
+     (record booleans and format names only — never the value)
+
+D. AUTOMATIC CROSS-APPLICATION PASTE
+     NOT IMPLEMENTED — nothing to test.
+     Cliptide restores the clipboard; the user presses paste themselves.
+     Do not mark this PASS. See section 4.
+
+OS permission prompts:   (what it asked, and once or repeatedly — or NONE)
+Error output:            (paste terminal errors, or NONE)
+Other observations:
+```
+
+### What a FAIL means
+
+- **Step 19, 20, or 21 FAIL** — stop and report immediately. That is a privacy
+  guarantee breaking, and it blocks the milestone.
+- **Step 6 or 7 FAIL** — the overlay is not usable as a summonable utility;
+  M2 is not complete.
+- Anything else — record it and continue; the remaining steps are still useful.
