@@ -204,8 +204,18 @@ async function run(dataDir) {
   await settle();
   check('nothing is captured after stop', cliptide.store.size === sizeAfterStop, `size=${cliptide.store.size}`);
 
+  // --- 10. Harness self-test ------------------------------------------------
+  // Proves the failure path actually produces a non-zero exit. A verification
+  // script that silently always succeeds is indistinguishable from one that
+  // works, so operators should run this once on each machine before trusting a
+  // green result:  CLIPTIDE_VERIFY_FORCE_FAIL=1 npx electron ...
+  if (process.env.CLIPTIDE_VERIFY_FORCE_FAIL) {
+    check('deliberate failure injection (CLIPTIDE_VERIFY_FORCE_FAIL)', false, 'harness self-test');
+  }
+
   return {
     runId: RUN_ID,
+    forcedFailure: !!process.env.CLIPTIDE_VERIFY_FORCE_FAIL,
     platform: process.platform,
     arch: process.arch,
     osRelease: os.release(),

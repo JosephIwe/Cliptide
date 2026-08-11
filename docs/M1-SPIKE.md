@@ -286,6 +286,28 @@ Any of these is a FAIL — report it, do not work around it:
 - macOS shows a paste prompt on **every** poll tick (as opposed to once) — that
   would make polling unusable and changes the architecture
 
+### Confirm the harness can actually fail (run this first)
+
+A verification script that always exits 0 is indistinguishable from one that
+works. Before trusting a green result on a new machine, prove both paths:
+
+```bash
+# Expect: OVERALL: FAIL, exit code 1
+CLIPTIDE_VERIFY_FORCE_FAIL=1 npx electron packages/desktop/scripts/verify-pipeline.js
+echo $?
+
+# Expect: OVERALL: PASS, exit code 0  (plants a synthetic marker, no manager needed)
+CLIPTIDE_VERIFY_SELFTEST=1 npx electron packages/desktop/scripts/verify-concealed.js
+echo $?
+```
+
+On Windows PowerShell use `$env:CLIPTIDE_VERIFY_FORCE_FAIL=1; npx electron ...`
+and `$LASTEXITCODE`.
+
+Both scripts exit **0 on pass and non-zero on fail**, so they can be chained or
+run in CI. `app.exit()` is used rather than `app.quit()`, which discards the
+status.
+
 ### What to send back
 
 Both `===CLIPTIDE_*_JSON===` blocks, plus the saved report path printed by

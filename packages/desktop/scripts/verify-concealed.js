@@ -108,6 +108,22 @@ app.whenReady().then(() => {
   console.log(`  3. copy ordinary text again`);
   console.log(`\nPASS = step 2 reports "CONCEALED -> would NOT be recorded".\n`);
 
+  // Harness self-test: plant a synthetic marker so the detection path fires
+  // without a password manager. Proves the success path exits 0 on this
+  // machine, so a later real-manager PASS can be trusted rather than assumed.
+  //   CLIPTIDE_VERIFY_SELFTEST=1 npx electron scripts/verify-concealed.js
+  if (process.env.CLIPTIDE_VERIFY_SELFTEST) {
+    const format =
+      process.platform === 'win32'
+        ? 'ExcludeClipboardContentFromMonitorProcessing'
+        : process.platform === 'linux'
+          ? 'x-kde-passwordManagerHint'
+          : 'org.nspasteboard.ConcealedType';
+    const value = format === 'x-kde-passwordManagerHint' ? Buffer.from('secret', 'utf8') : Buffer.from([1]);
+    safely(() => clipboard.writeBuffer(format, value));
+    console.log(`SELF-TEST: planted synthetic marker '${format}' — expecting PASS and exit 0.\n`);
+  }
+
   const timer = setInterval(() => {
     const observation = snapshot();
     const signature = JSON.stringify([
