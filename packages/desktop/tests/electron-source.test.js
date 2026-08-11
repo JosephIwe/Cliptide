@@ -240,8 +240,11 @@ test('a poll tick performs a bounded number of clipboard calls', async () => {
     Object.keys(clipboard.calls).map((k) => [k, clipboard.calls[k] - baseline[k]]),
   );
 
-  // One marker probe per platform-applicable format, plus one text read.
+  // Every known marker is probed on every platform (see markers.js), plus one
+  // text read. At the measured ~84us per has() call that is ~0.42ms per tick —
+  // about 0.1% of a core at the 400ms default, and still hundreds of times
+  // cheaper than the process spawn this replaced.
   assert.equal(delta.readText, 1, 'exactly one payload read per tick');
-  assert.ok(delta.has <= 4, `bounded marker probes (${delta.has})`);
+  assert.ok(delta.has <= 6, `marker probes stay bounded (${delta.has})`);
   assert.equal(delta.readImage, 0, 'no image decode while text is present');
 });

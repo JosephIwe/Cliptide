@@ -62,10 +62,36 @@ export const MARKER_PROBES = Object.freeze([
   },
 ]);
 
-/** Probes that apply on a given platform. Unknown platforms probe everything. */
-export function probesFor(platform) {
-  const applicable = MARKER_PROBES.filter((p) => p.platforms.includes(platform));
-  return applicable.length > 0 ? applicable : MARKER_PROBES;
+/**
+ * Every probe runs on every platform.
+ *
+ * Scoping probes to the "native" platform was a real bug: on Linux the source
+ * probed only the KDE hint, so a macOS-style concealed marker sitting on the
+ * clipboard was invisible and the content would have been recorded. The
+ * verification script caught it.
+ *
+ * Probing everything is the correct default because the failure modes are not
+ * symmetric. A false positive means one item is not saved — a minor annoyance.
+ * A false negative means a password is written to disk — the exact failure this
+ * product exists to prevent. Given that asymmetry, breadth wins.
+ *
+ * It is also affordable: five `has()` calls at ~84us is ~0.42ms per tick,
+ * roughly 0.1% of a core at the 400ms default, and still hundreds of times
+ * cheaper than the process spawn it replaced.
+ *
+ * Cross-platform password managers are the concrete case — an Electron or Qt
+ * manager may well set a marker that is not the one "native" to the host OS.
+ *
+ * `platformsFor()` is retained so tooling can report which markers are
+ * *expected* here, without narrowing what is actually checked.
+ */
+export function probesFor() {
+  return MARKER_PROBES;
+}
+
+/** Markers conventionally set by this platform. Reporting only, never a filter. */
+export function expectedMarkersFor(platform) {
+  return MARKER_PROBES.filter((p) => p.platforms.includes(platform)).map((p) => p.format);
 }
 
 /**
@@ -83,7 +109,11 @@ export function probesFor(platform) {
 export function detectConcealedMarkers(clipboard, platform) {
   const found = [];
 
-  for (const probe of probesFor(platform)) {
+  // `platform` is accepted for signature stability and reporting; it must not
+  // narrow the probe set — see probesFor().
+  void platform;
+
+  for (const probe of probesFor()) {
     let present = false;
     try {
       present = clipboard.has(probe.format) === true;

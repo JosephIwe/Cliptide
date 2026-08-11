@@ -22,7 +22,8 @@
  */
 
 import { app, clipboard } from 'electron';
-import { detectConcealedMarkers } from '../src/clipboard/markers.js';
+import os from 'node:os';
+import { detectConcealedMarkers, expectedMarkersFor } from '../src/clipboard/markers.js';
 
 const PROBE_FORMATS = [
   'org.nspasteboard.ConcealedType',
@@ -95,9 +96,17 @@ function report(observation, index) {
 }
 
 app.whenReady().then(() => {
-  console.log(`\nCliptide concealed-marker probe`);
-  console.log(`platform=${process.platform} electron=${process.versions.electron}`);
-  console.log(`Listening for ${DURATION_MS / 1000}s. Copy ordinary text, then a password.\n`);
+  console.log(`\nCliptide concealed-marker probe (M1.1)`);
+  console.log(`platform=${process.platform} ${process.arch} (${os.release()})`);
+  console.log(`electron=${process.versions.electron}`);
+  console.log(`markers conventional here: ${JSON.stringify(expectedMarkersFor(process.platform))}`);
+  console.log(`(all known markers are probed regardless of platform)`);
+  console.log(`\nNothing is stored and no clipboard content is printed — lengths only.`);
+  console.log(`\nListening for ${DURATION_MS / 1000}s. Do this, in order:`);
+  console.log(`  1. copy ordinary text from a text editor`);
+  console.log(`  2. copy a THROWAWAY password from your password manager`);
+  console.log(`  3. copy ordinary text again`);
+  console.log(`\nPASS = step 2 reports "CONCEALED -> would NOT be recorded".\n`);
 
   const timer = setInterval(() => {
     const observation = snapshot();
@@ -115,13 +124,32 @@ app.whenReady().then(() => {
   setTimeout(() => {
     clearInterval(timer);
 
-    const anyMarkerSeen = observations.some((o) => Array.isArray(o.detectedMarkers) && o.detectedMarkers.length > 0);
-    console.log(`\n===CLIPTIDE_CONCEALED_JSON===`);
+    const anyMarkerSeen = observations.some(
+      (o) => Array.isArray(o.detectedMarkers) && o.detectedMarkers.length > 0,
+    );
+
+    console.log(`\n=== RESULT ===`);
+    console.log(`  platform            ${process.platform} ${process.arch}`);
+    console.log(`  electron            ${process.versions.electron}`);
+    console.log(`  clipboard changes   ${observations.length}`);
+    console.log(`  concealed observed  ${anyMarkerSeen}`);
+    console.log(
+      `\n  ${
+        anyMarkerSeen
+          ? 'OVERALL: PASS — Electron sees the concealed marker on this platform'
+          : 'OVERALL: FAIL or INCONCLUSIVE — no marker observed. If you did copy from a\n           password manager, Electron cannot see its marker here and the native\n           addon in docs/M1-SPIKE.md section 7 is required.'
+      }\n`,
+    );
+
+    console.log(`===CLIPTIDE_CONCEALED_JSON===`);
     console.log(
       JSON.stringify(
         {
           platform: process.platform,
+          arch: process.arch,
+          osRelease: os.release(),
           electron: process.versions.electron,
+          expectedMarkers: expectedMarkersFor(process.platform),
           observations,
           anyConcealedMarkerObserved: anyMarkerSeen,
           verdict: anyMarkerSeen
@@ -132,6 +160,7 @@ app.whenReady().then(() => {
         2,
       ),
     );
+    process.exitCode = anyMarkerSeen ? 0 : 1;
     app.quit();
   }, DURATION_MS);
 });

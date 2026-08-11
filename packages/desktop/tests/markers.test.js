@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { detectConcealedMarkers, probesFor, MARKER_PROBES } from '../src/clipboard/markers.js';
+import {
+  detectConcealedMarkers,
+  probesFor,
+  expectedMarkersFor,
+  MARKER_PROBES,
+} from '../src/clipboard/markers.js';
 import { FakeClipboard } from './helpers/fake-clipboard.js';
 
 test('a clean clipboard reports no markers', () => {
@@ -97,10 +102,46 @@ test('a throwing readBuffer degrades safely instead of aborting', () => {
   assert.deepEqual(detectConcealedMarkers(clipboard, 'win32'), []);
 });
 
-test('probes are scoped per platform and fall back to all for unknown ones', () => {
-  assert.ok(probesFor('darwin').every((p) => p.platforms.includes('darwin')));
-  assert.ok(probesFor('win32').every((p) => p.platforms.includes('win32')));
-  assert.equal(probesFor('sunos').length, MARKER_PROBES.length, 'unknown platform probes all');
+test('every marker is probed on every platform', () => {
+  // Regression guard. Scoping probes by platform meant a macOS-style marker on
+  // a Linux clipboard went undetected and the content would have been stored.
+  // A false positive costs one unsaved item; a false negative writes a password
+  // to disk. Breadth is the only safe default.
+  assert.equal(probesFor().length, MARKER_PROBES.length);
+
+  for (const platform of ['darwin', 'win32', 'linux', 'sunos']) {
+    const clipboard = new FakeClipboard().setConcealed('pw', 'org.nspasteboard.ConcealedType');
+    assert.deepEqual(
+      detectConcealedMarkers(clipboard, platform),
+      ['org.nspasteboard.concealedtype'],
+      `a macOS marker must be honoured on ${platform}`,
+    );
+  }
+});
+
+test('a Windows marker is honoured on macOS and vice versa', () => {
+  const windowsMarkerOnMac = new FakeClipboard().setConcealed(
+    'pw',
+    'ExcludeClipboardContentFromMonitorProcessing',
+  );
+  assert.deepEqual(detectConcealedMarkers(windowsMarkerOnMac, 'darwin'), [
+    'excludeclipboardcontentfrommonitorprocessing',
+  ]);
+
+  const kdeMarkerOnWindows = new FakeClipboard().setConcealed(
+    'pw',
+    'x-kde-passwordManagerHint',
+    Buffer.from('secret', 'utf8'),
+  );
+  assert.deepEqual(detectConcealedMarkers(kdeMarkerOnWindows, 'win32'), [
+    'x-kde-passwordmanagerhint=secret',
+  ]);
+});
+
+test('expectedMarkersFor reports per-platform convention without narrowing checks', () => {
+  assert.ok(expectedMarkersFor('darwin').includes('org.nspasteboard.ConcealedType'));
+  assert.ok(expectedMarkersFor('win32').includes('ExcludeClipboardContentFromMonitorProcessing'));
+  assert.deepEqual(expectedMarkersFor('sunos'), [], 'no conventional markers, but all still probed');
 });
 
 test('every emitted marker is one the engine recognizes', async () => {
