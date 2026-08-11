@@ -1,10 +1,67 @@
 # M1 — Native Clipboard Source Spike
 
-Status: **complete on Linux, unverified on macOS and Windows.**
-Electron **43.3.0**.
+Status: **verified on Linux, macOS, and Windows.** One manual test remains.
+Electron **43.3.0**. Node **>=22**.
 
 Goal: prove `OS clipboard → Electron native clipboard API → Cliptide engine`
 and retire the process-spawning CLI scaffolding.
+
+---
+
+## M1 final status
+
+| Verification | Result |
+| --- | --- |
+| Linux pipeline | **VERIFIED** |
+| macOS pipeline | **VERIFIED** |
+| Windows pipeline | **VERIFIED** |
+| macOS cross-process concealed marker | **VERIFIED** |
+| Windows cross-process concealed marker | **VERIFIED** |
+| Concealed content refusal + non-storage | **VERIFIED** |
+| Verification exit-code behaviour | **VERIFIED** |
+| **Real password-manager compatibility** | **NOT VERIFIED — MANUAL TEST REQUIRED** |
+
+**Runtime requirement:** Node **>=22**. `node --test` only supports glob patterns
+after Node 20; the manifests previously claimed `>=20`, which the first
+cross-platform CI run proved could never have worked.
+
+**CI:** `.github/workflows/m1-platform-verification.yml` — `macos-latest` and
+`windows-latest`, on push and on demand. No `continue-on-error` anywhere, and
+the deliberate-failure step asserts a non-zero exit, so a failed verification
+cannot surface as a green run.
+
+Evidence run: <https://github.com/JosephIwe/Cliptide/actions/runs/31475789553>
+(macOS `darwin arm64 25.5.0`, Windows `win32 x64`). macOS pipeline 18/18 with
+idle CPU 0.314%; cross-process 8/8 on each platform, with the marker written by
+a separate OS process (macOS pid 3712 vs Electron 3310; Windows pid 1852 vs
+Electron 10144).
+
+**Commits**
+
+| SHA | Change |
+| --- | --- |
+| `861ec62` | Electron-native clipboard source (M1 spike) |
+| `3033660` | Verification scripts signal failure via exit code |
+| `100c5d4` | Self-test switches; all four exit paths proven |
+| `74f0c51` | CI workflow + cross-process native marker helpers |
+| `af29c44` | Node requirement corrected to `>=22` |
+
+### The one thing still outstanding
+
+Cross-process verification proves an **external native process** can place a
+concealed marker that Electron detects and the engine refuses. It does **not**
+prove that 1Password, Bitwarden, Keeper, or Apple Passwords set that same
+marker — they may use a different type, or none.
+
+Closing it requires a human on a real desktop:
+
+```
+npx electron packages/desktop/scripts/verify-concealed.js
+```
+
+then copying a **throwaway** password from a real manager. PASS is step 2
+reporting `CONCEALED -> would NOT be recorded` with exit code 0. Full procedure
+in section 6.
 
 ---
 
@@ -100,9 +157,10 @@ guarantee. Additive only — no existing contract, signature, or behavior change
 
 | Platform | Mechanism | Status |
 | --- | --- | --- |
-| Linux (X11) | `has(marker)` per known marker | **VERIFIED** — live Electron run: token `concealed`, markers reported, payload never read, content not recorded |
-| macOS | same | **NOT VERIFIED** — requires a Mac |
-| Windows | same | **NOT VERIFIED** — requires a Windows box |
+| Linux (X11) | `has(marker)` per known marker | **VERIFIED** — same-process marker; token `concealed`, payload never read, content not recorded |
+| macOS | same | **VERIFIED** — marker written by a separate Swift/NSPasteboard process; Electron detected it and the engine refused to store it |
+| Windows | same | **VERIFIED** — marker written by a separate Win32 `SetClipboardData` process; same result |
+| **Any real password manager** | — | **NOT VERIFIED** — manual desktop test required |
 
 ### A bug M1.1 found before any real machine ran
 
