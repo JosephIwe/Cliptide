@@ -11,7 +11,9 @@
   "scripts": {
     "test": "node --test \"tests/**/*.test.js\"",
     "probe": "electron --no-sandbox src/probe.js",
-    "probe:xvfb": "xvfb-run -a electron --no-sandbox src/probe.js"
+    "probe:xvfb": "xvfb-run -a electron --no-sandbox src/probe.js",
+    "start": "electron src/main.js",
+    "measure": "node scripts/measure-overlay.mjs"
   },
   "devDependencies": {
     "electron": "43.3.0"

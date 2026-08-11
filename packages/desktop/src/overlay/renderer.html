@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      No network is reachable from this page by construction: the CSP allows
+      only 'self', and there is no bridge that could fetch anything anyway.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;"
+    />
+    <title>Cliptide</title>
+    <link rel="stylesheet" href="renderer.css" />
+  </head>
+  <body>
+    <div class="overlay" role="dialog" aria-label="Clipboard history">
+      <input
+        id="search"
+        class="search"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Search clipboard history…"
+        aria-label="Search clipboard history"
+        aria-controls="results"
+      />
+      <ul id="results" class="results" role="listbox" aria-label="Clipboard items" tabindex="-1"></ul>
+      <div id="empty" class="empty" hidden>Nothing here yet.</div>
+      <footer class="hint" aria-hidden="true">
+        <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
+        <span><kbd>enter</kbd> copy</span>
+        <span><kbd>esc</kbd> dismiss</span>
+      </footer>
+    </div>
+    <script type="module" src="renderer.js"></script>
+  </body>
+</html>

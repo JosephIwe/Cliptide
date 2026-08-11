@@ -1,0 +1,158 @@
+/*
+ * Overlay styling.
+ *
+ * A utility strip, not a dashboard. No animations: the window appears on a
+ * keystroke and any transition would read as lag on the one interaction that
+ * must feel instant.
+ */
+
+:root {
+  --bg: #ffffff;
+  --fg: #16181d;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --selected-bg: #2563eb;
+  --selected-fg: #ffffff;
+  --selected-muted: #d8e3fb;
+  --flag: #b45309;
+  --flag-bg: #fef3c7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181d;
+    --fg: #e8eaed;
+    --muted: #9aa0aa;
+    --border: #2a2e37;
+    --selected-bg: #3b82f6;
+    --selected-fg: #ffffff;
+    --selected-muted: #dbe7fd;
+    --flag: #fbbf24;
+    --flag-bg: #3a2f10;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+.overlay {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.search {
+  flex: 0 0 auto;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  outline: none;
+}
+
+.search::placeholder {
+  color: var(--muted);
+}
+
+.results {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 14px;
+  cursor: default;
+  /* Previews are single-line by contract; keep them that way visually too. */
+  white-space: nowrap;
+}
+
+.row[aria-selected='true'] {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.row[aria-selected='true'] .meta,
+.row[aria-selected='true'] .age {
+  color: var(--selected-muted);
+}
+
+.preview {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta,
+.age {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pin {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+/* Credential-shaped content the user copied themselves. The preview is
+   already masked by the engine; this only makes the reason visible. */
+.flag {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  font-size: 10px;
+  border-radius: 4px;
+  color: var(--flag);
+  background: var(--flag-bg);
+}
+
+.empty {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.hint {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 14px;
+  padding: 7px 14px;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+kbd {
+  font: inherit;
+  padding: 0 4px;
+  margin-right: 3px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
