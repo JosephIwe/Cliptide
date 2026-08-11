@@ -160,8 +160,11 @@ app.whenReady().then(() => {
         2,
       ),
     );
-    process.exitCode = anyMarkerSeen ? 0 : 1;
-    app.quit();
+    // app.quit() does not honour process.exitCode — it tears the process down
+    // before Node applies it, so a failing run exited 0. app.exit() sets the
+    // status directly. A verification harness that cannot signal failure to its
+    // caller is worse than no harness.
+    app.exit(anyMarkerSeen ? 0 : 1);
   }, DURATION_MS);
 });
 

@@ -273,8 +273,10 @@ app.whenReady().then(async () => {
 
   console.log(`===CLIPTIDE_PIPELINE_JSON===\n${JSON.stringify(summary, null, 2)}`);
 
-  process.exitCode = failed === 0 ? 0 : 1;
-  app.quit();
+  // app.quit() does not honour process.exitCode — it tears the process down
+  // before Node applies it, so a failing run exited 0. Cleanup has already run
+  // in the finally block above, so exiting directly is safe here.
+  app.exit(failed === 0 ? 0 : 1);
 });
 
 app.on('window-all-closed', () => {});
