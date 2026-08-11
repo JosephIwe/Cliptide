@@ -130,9 +130,20 @@ export async function createCliptide(options = {}) {
 
 export { ClipStore } from './storage/store.js';
 export { ClipboardMonitor, MONITOR_EVENTS } from './capture/monitor.js';
-export { MemoryClipboardSource } from './capture/source.js';
+export { MemoryClipboardSource, assertClipboardSource } from './capture/source.js';
 export { HistoryService } from './history/index.js';
 export { SettingsStore, DEFAULT_SETTINGS } from './settings/index.js';
 export { searchHistory } from './search/index.js';
 export { createLocalResolver, runAgentRequest, AGENT_INTENTS } from './agent/index.js';
 export { resolveDataDir, resolvePaths } from './storage/paths.js';
+
+/**
+ * Vocabulary a host process needs to implement a ClipboardSource correctly.
+ *
+ * A platform source has to emit concealed markers the engine recognizes and
+ * content kinds it accepts. Without these exported, a host would hardcode the
+ * strings and a rename on either side would silently disable the
+ * never-record-concealed-content guarantee. Additive only — no existing
+ * contract changes.
+ */
+export { CONCEALED_MARKERS, CONTENT_KINDS, isConcealed } from './core/types.js';

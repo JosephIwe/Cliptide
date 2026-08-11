@@ -26,3 +26,6 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# Electron binary is downloaded per-platform by npm postinstall
+packages/desktop/dist/
