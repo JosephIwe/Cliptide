@@ -1,0 +1,103 @@
+name: M1 platform verification
+
+# Runs the Cliptide M1 verification on genuine GitHub-hosted macOS and Windows
+# runners. The headless Linux environment the engine was built in cannot prove
+# anything about these platforms, so this workflow is the evidence.
+#
+# Every verification step must exit 0. A failed verification can never appear as
+# a successful run: there is no `continue-on-error` anywhere in this file, and
+# the deliberate-failure steps assert a NON-zero exit and fail the job if they
+# get a zero one.
+#
+# SCOPE LIMIT: the cross-process job proves an external native process can place
+# a concealed marker that Electron detects. It does NOT prove that any specific
+# password manager sets that marker. That remains a manual desktop test.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - '.github/workflows/m1-platform-verification.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macOS (arm64)
+          - os: windows-latest
+            label: Windows (x64)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Record runner identity
+        shell: bash
+        run: |
+          echo "runner.os=${{ runner.os }} runner.arch=${{ runner.arch }}"
+          echo "node=$(node --version)  npm=$(npm --version)"
+          uname -a || ver
+
+      - name: Clean install
+        shell: bash
+        run: npm ci
+
+      - name: Full test suite
+        shell: bash
+        run: npm test
+
+      # --- Harness self-test -------------------------------------------------
+      # A verification script that always exits 0 is indistinguishable from one
+      # that works. Prove the failure path before trusting any green result.
+      - name: Self-test — forced failure MUST exit non-zero
+        shell: bash
+        env:
+          CLIPTIDE_VERIFY_FORCE_FAIL: '1'
+        run: |
+          if npx electron packages/desktop/scripts/verify-pipeline.js; then
+            echo "::error::verify-pipeline.js exited 0 despite an injected failure — the harness cannot report failures"
+            exit 1
+          fi
+          echo "forced failure correctly produced a non-zero exit"
+
+      - name: Self-test — synthetic marker MUST exit zero
+        shell: bash
+        env:
+          CLIPTIDE_VERIFY_SELFTEST: '1'
+          CLIPTIDE_PROBE_SECONDS: '8'
+        run: npx electron packages/desktop/scripts/verify-concealed.js
+
+      # --- The actual verifications -----------------------------------------
+      - name: Pipeline verification (real OS clipboard)
+        shell: bash
+        run: npx electron packages/desktop/scripts/verify-pipeline.js
+
+      - name: Cross-process concealed-marker verification
+        shell: bash
+        run: npx electron packages/desktop/scripts/verify-cross-process.js
+
+      - name: Scope reminder
+        if: always()
+        shell: bash
+        run: |
+          echo "This job does NOT verify any password manager's behaviour."
+          echo "Remaining manual test: real password manager -> real desktop -> Cliptide."
